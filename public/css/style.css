@@ -15,14 +15,13 @@ header #logo {
   margin-top: 20px;
 }
 
-#body .nav-tabs {
-  margin-top: 71px;
-  margin-bottom: 0px;
-}
-
 #body {
   margin-top: -180px;
   z-index: 1;
+}
+
+#body .nav-tabs {
+  margin: 71px 18px 0 0;
 }
 
 #body #content {

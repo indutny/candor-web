@@ -55,12 +55,23 @@
         out.append($('<div/>').text(result));
       },
       runtime: null,
-      stringify: function(value) {
+      stringify: function stringify(value, depth) {
+        if (!depth) depth = 0;
         switch (global.runtime.$typeof(value)) {
-          case 'nil': return 'nil';
-          case 'object': return '[object]';
-          case 'array': return '[array]';
-          default: return global.runtime.$toString(value);
+          case 'nil':
+            return 'nil';
+          case 'object':
+            if (depth >= 3) return '[object]';
+            return '{ ' + global.runtime.$keysof(value).map(function(key) {
+              return stringify(key) + ': ' + stringify(value[key], depth + 1);
+            }).join(',\n') + ' }';
+          case 'array':
+            if (depth >= 3) return '[array]';
+            return '[' + value.map(function(value) {
+              return stringify(value, depth + 1);
+            }).join(', ') + ']';
+          default:
+            return global.runtime.$toString(value);
         }
       }
     };
