@@ -1,0 +1,61 @@
+body {
+  background: #eee;
+}
+
+.container {
+  width: 750px;
+}
+
+header #logo {
+  position: relative;
+  left: -80px;
+  width: 198px;
+  height: 197px;
+  z-index: 2;
+  margin-top: 20px;
+}
+
+#body .nav-tabs {
+  margin-top: 71px;
+  margin-bottom: 0px;
+}
+
+#body {
+  margin-top: -180px;
+  z-index: 1;
+}
+
+#body #content {
+  margin-top: -1px;
+  background: white;
+  border: 1px solid #ddd;
+  padding: 60px 20px 10px;
+  height: 360px;
+}
+
+#body #editor {
+  width: 344px;
+  height: 310px;
+}
+
+#body #console {
+  background: #5d5d5d;
+  width: 344px;
+  height: 310px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 18px;
+  color: #eee;
+  padding: 0 2px;
+}
+
+#body #run-btn {
+  font-size: 24px;
+  line-height: 26px;
+  float: right;
+  margin-bottom: 4px;
+}
+
+#body #run-btn i {
+  line-height: 26px;
+}

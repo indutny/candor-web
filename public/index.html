@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 20px;
+      }
+    </style>
+    <link href="css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="css/font-awesome.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="img/favicon.ico" rel="shortcut icon">
+
+    <title>Candor - programing language</title>
+  </head>
+  <body>
+  <div class="container">
+    <header>
+      <img id="logo" src="img/logo.png" alt="Candor" />
+    </header>
+
+    <div class="container" id="body">
+      <ul class="nav nav-tabs pull-right">
+        <li>
+          <a target="_blank"
+             href="https://github.com/indutny/candor#readme">
+            Github
+          </a>
+        </li>
+        <li class="active"><a href="#">REPL</a></li>
+      </ul>
+
+      <div class="clearfix"></div>
+
+      <div id="content">
+        <a class="btn btn-success" data-text-loading="Compiling..."
+           id="run-btn" href="#">
+          <i class="icon-play"></i>
+          Run
+        </a>
+        <div class="clearfix"></div>
+        <div class="row-fluid">
+          <div class="span6">
+            <div id="editor">global.print('hello world')</div>
+          </div>
+          <div class="span6">
+            <div id="console"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/ace/ace.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
+  </body>
+</html>
