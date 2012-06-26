@@ -1,12 +1,18 @@
 {
   "name": "candor-web",
-  "version": "0.0.1",
+  "version": "0.0.1-1",
   "private": true,
   "domain": "candor-lang.org",
   "dependencies": {
     "union": "~0.3.2",
     "flatiron": "~0.2.2",
-    "ecstatic": "~0.1.6",
-    "candor.js": "~0.0.1"
+    "ecstatic": "~0.1.6"
+  },
+  "subdomain": "candor-web",
+  "scripts": {
+    "start": "app.js"
+  },
+  "engines": {
+    "node": ">= 0.6.0"
   }
 }

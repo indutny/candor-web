@@ -1,6 +1,6 @@
 var flatiron = require('flatiron'),
     ecstatic = require('ecstatic'),
-    candor = require('candor.js'),
+    candor = require('./candor.js'),
     app = flatiron.app;
 
 app.use(flatiron.plugins.http);

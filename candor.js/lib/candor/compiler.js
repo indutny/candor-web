@@ -1,0 +1,401 @@
+var util = require('util'),
+    fs = require('fs'),
+    path = require('path'),
+    uglify = require('uglify-js');
+
+function Compiler(ast) {
+  this.ast = ast;
+};
+exports.Compiler = Compiler;
+
+//
+// ### function compile (ast, options)
+// #### @ast {Array} Candor AST
+// #### @options {Object} **optional** options for uglify
+// Compile AST into javascript code.
+//
+Compiler.compile = function compile(ast, options) {
+  return new Compiler(ast).execute(options);
+};
+
+//
+// ### function getRuntime (raw)
+// #### @raw {Boolean} **optional** default: false - return AST
+// Returns uglify's AST of Candor's runtime
+//
+Compiler.getRuntime = function getRuntime(raw, options) {
+  if (!Compiler.runtime) {
+    var content = fs.readFileSync(path.resolve(__dirname, 'runtime.js'));
+    Compiler.runtime = uglify.parser.parse(content.toString())[1];
+  }
+
+  if (!raw) {
+    return uglify.uglify.gen_code(['toplevel', Compiler.runtime], options);
+  }
+
+  return Compiler.runtime;
+};
+Compiler.runtime = null;
+
+Compiler.esGlobals = [
+  'global', // Not really ES, but helpful
+  'NaN', 'Infinity', 'undefined', 'null',
+  'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'decodeURI',
+  'decodeURIComponent', 'encodeURI', 'encodeURIComponent',
+  'Object', 'Function', 'Array', 'String', 'Boolean', 'Number',
+  'Date', 'RegExp', 'Error', 'EvalError', 'RangeError',
+  'ReferenceError', 'SyntaxError', 'TypeError', 'URIError',
+  'Math', 'JSON'
+].reduce(function (obj, key) {
+  obj[key] = true;
+
+  return obj;
+}, {});
+
+//
+// ### function computeScope (ast)
+// #### @ast {Array} AST
+// #### @options {Object} options
+// ##### `tweakGlobals` - **optional** default: true, replace globals with vars
+// Add var statements where needed (to implement lexical scoping)
+//
+Compiler.prototype.computeScope = function computeScope(ast, options) {
+  var context = { vars: {}, parent: null };
+
+  function lookup(name) {
+    var current = context;
+
+    while (current && current.vars[name] !== 'local') {
+      current = current.parent;
+    }
+
+    return !!current;
+  }
+
+  function traverseLocals(node) {
+    if (!Array.isArray(node)) return node;
+
+    if (node[0] === 'function') return enterFunction(node);
+
+    // If met assignment to ES global - shadow it with a local variable
+    if (node[0] === 'assign' &&
+        node[1][0] === 'name' &&
+        Compiler.esGlobals.hasOwnProperty(node[1][1]) &&
+        !lookup(node[1][1])) {
+      context.vars[node[1][1]] = 'local';
+    }
+
+    // Non ES-global access create locals too
+    if (node[0] === 'name' && !Compiler.esGlobals.hasOwnProperty(node[1]) &&
+        !lookup(node[1])) {
+      context.vars[node[1]] = 'local';
+    }
+
+    return node.map(traverseLocals);
+  }
+
+  function traverseGlobals(node) {
+    if (!Array.isArray(node)) return node;
+
+    if (node[0] === 'function') return node;
+
+    if (node[0] === 'member' &&
+        node[1][0] === 'name' && node[1][1] === 'global' &&
+        node[2][0] === 'property' &&
+        !lookup(node[2][1])) {
+      return ['name', node[2][1]];
+    }
+
+    return node.map(traverseGlobals);
+  }
+
+  function enterFunction(node) {
+    // Lift function's name to the parent scope
+    if (node[1] !== null) context.vars[node[1]] = 'local';
+
+    // Allocate one variable for compiler
+    context = { vars: { '$$tmp': 'local' }, parent: context };
+
+    // Add arguments to context
+    node[2].forEach(function(arg) {
+      context.vars[arg] = 'arg';
+    });
+
+    // Find all local variables and add them to context
+    var body = node[3].map(traverseLocals);
+
+    // Replace global.a with a if it's not in context
+    if (options.tweakGlobals !== false) {
+      body = node[3].map(traverseGlobals);
+    }
+
+    // Add variable declarations
+    if (Object.keys(context.vars).length > 0) {
+      body = [['var'].concat([Object.keys(context.vars).map(function(name) {
+        return [name];
+      })])].concat(body);
+    }
+
+    context = context.parent;
+
+    return ['function', node[1], node[2], body];
+  }
+
+  return enterFunction(['function', null, [], ast])[3];
+};
+
+//
+// ### function translate (ast, options)
+// #### @ast {Array} AST
+// #### @options {Object} translator options, possible:
+// ##### - `raw` do not wrap output in anonymous function and do not add runtime
+// Translates candor's AST to uglify's AST
+//
+Compiler.prototype.translate = function translate(ast, options) {
+  function traverse(node) {
+    if (!Array.isArray(node)) {
+      throw new TypeError('Incorrect AST node: ' + util.inspect(node));
+    }
+
+    function runtime(func, args, rawArgs) {
+      return [
+        'call',
+        func.split(/\./g).reduce(function(whole, part) {
+          return ['dot', whole, '$' + part];
+        }, ['name', '$$runtime']),
+        rawArgs ? args : args.map(traverse)
+      ];
+    }
+
+    switch (node[0]) {
+      case 'var':
+        // Not generated by parser! (Internal)
+        return node;
+      case 'number':
+        return ['num', node[1]];
+      case 'vararg':
+        // Should be already processed by compiler
+        return traverse(node[1]);
+      case 'string':
+      case 'name':
+        return node;
+      case 'true':
+      case 'false':
+        return ['name', node[0]];
+      case 'nil':
+        return ['name', 'undefined'];
+      case 'break':
+      case 'continue':
+        return [node[0], undefined];
+      case 'return':
+        return ['return', traverse(node[1])];
+      case 'if':
+      case 'while':
+        return [node[0]].concat(node.slice(1).map(function(node) {
+          if (!node) return;
+          return traverse(node);
+        }));
+      case 'block':
+        return ['block', node[1].map(function(node) {
+          return ['stat', traverse(node)];
+        })];
+      case 'pre-unop':
+        if (node[1] === '!') {
+          return ['unary-prefix', '!', runtime('toBoolean', [node[2]])];
+        }
+
+        if (node[1] === '+' || node[1] === '-') {
+          return ['unary-prefix', node[1], runtime('toNumber', [node[2]])];
+        }
+
+        if (node[2][0] === 'name') {
+          return traverse([
+            'assign', node[2],
+            ['binop', node[1].slice(1), node[2], ['number', 1]]
+          ]);
+        } else if (node[2][0] === 'member') {
+          return runtime('math.prefixUnop', [
+            ['string', node[1]],
+            node[2][1],
+            node[2][2][0] === 'property' ?
+                ['string', node[2][2][1]]
+                :
+                node[2][2]
+          ]);
+        }
+        return ['unary-prefix', node[1], traverse(node[2])];
+      case 'post-unop':
+        if (node[2][0] === 'name') {
+          // (tmp = a), ++a, tmp
+          return [
+            'seq',
+            ['assign', true, ['name', '$$tmp'], node[2]],
+            [
+              'seq',
+              traverse(['pre-unop', node[1], node[2]]),
+              ['name', '$$tmp']
+            ]
+          ];
+        } else if (node[2][0] === 'member') {
+          return runtime('math.postfixUnop', [
+            ['string', node[1]],
+            node[2][1],
+            node[2][2][0] === 'property' ?
+                ['string', node[2][2][1]]
+                :
+                node[2][2]
+          ]);
+        }
+        return ['unary-postfix', node[1], traverse(node[2])];
+      case 'binop':
+        if (node[1] === '||' || node[1] === '&&') {
+          // Inline op
+          return ['binary', node[1], traverse(node[2]), traverse(node[3])];
+        } else {
+          // Call runtime
+          return runtime('math.binary', [
+            ['string', node[1]],
+            node[2],
+            node[3]
+          ]);
+        }
+      case 'assign':
+        // Handle property set
+        if (node[1][0] === 'member') {
+          if (node[1][2][0] === 'property') {
+            return runtime('setProperty', [
+              node[1][1],
+              ['string', node[1][2][1]],
+              node[2]
+            ]);
+          } else {
+            return runtime('setProperty', [
+              node[1][1],
+              node[1][2],
+              node[2]
+            ]);
+          }
+        }
+        return ['assign', true, traverse(node[1]), traverse(node[2])];
+      case 'member':
+        if (node[2][0] === 'property') {
+          return runtime('getProperty', [node[1], ['string', node[2][1]]]);
+        } else {
+          return runtime('getProperty', [node[1], node[2]]);
+        }
+      case 'call':
+        if (node[2].length > 0 && node[2][node[2].length - 1][0] === 'vararg') {
+          return runtime('call', [
+            node[1],
+            ['array', node[2].slice(0, -1)],
+            node[2][node[2].length - 1]
+          ]);
+        } else {
+          return runtime('call', [node[1], ['array', node[2]]]);
+        }
+      case 'colonCall':
+        if (node[2].length > 0 && node[2][node[2].length - 1][0] === 'vararg') {
+          return runtime('colonCall', [
+            node[1][1], // host object
+            node[1][2], // property
+            ['array', node[2].slice(0, -1)],
+            node[2][node[2].length - 1]
+          ]);
+        } else {
+          return runtime('colonCall', [
+            node[1][1], // host object
+            node[1][2], // property
+            ['array', node[2]]
+          ]);
+        }
+      case 'function':
+        var hasVararg = node[2].length > 0 &&
+                        node[2][node[2].length -1][0] === 'vararg',
+            fn = [
+              'function',
+              null,
+              node[2].map(function(node) {
+                if (node[0] === 'vararg') {
+                  return node[1][1];
+                }
+                return node[1];
+              }),
+              node[3].map(traverse).map(function(stat) {
+                return ['stat', stat];
+              })
+            ];
+
+        if (hasVararg) {
+          fn[3].unshift(['stat', [
+            'assign', true,
+            node[2][node[2].length -1][1],
+            [ 'call',
+              [ 'dot',
+                [ 'dot', [ 'dot', [ 'name', 'Array' ], 'prototype' ], 'slice' ],
+                'call'
+              ],
+              [ [ 'name', 'arguments' ], [ 'num', node[2].length - 1 ] ]
+            ]
+          ]]);
+        }
+
+        fn = runtime('markFunction', [fn], true);
+
+        if (node[1] !== null) {
+          return ['assign', true, node[1], fn];
+        } else {
+          return fn;
+        }
+      case 'object':
+        return [
+          'object',
+          node[1].map(function(kv) {
+            if (kv[0][1][0] === 'property') {
+              return [['name', kv[0][1][1]], traverse(kv[1])];
+            }
+            return [kv[0][1], traverse(kv[1])];
+          })
+        ];
+      case 'array':
+        return [ 'array', node[1].map(traverse) ];
+      case 'typeof':
+      case 'keysof':
+      case 'sizeof':
+      case 'clone':
+        return runtime(node[0], [node[1]]);
+      case 'delete':
+        return ['unary-prefix', 'delete', traverse(node[1])];
+      default:
+        throw new Error('Unexpected node: ' + util.inspect(node));
+    }
+  }
+
+  if (options.raw) {
+    return ['toplevel', traverse(['block', ast])[1]];
+  }
+
+  return ['toplevel', [
+    [ 'stat',
+      [ 'call',
+        [ 'function',
+          null,
+          [],
+          Compiler.getRuntime(true).concat(traverse(['block', ast])[1])
+        ],
+        []
+      ]
+    ]
+  ]];
+};
+
+//
+// ### function execute ()
+// Translates AST to the javascript code
+//
+Compiler.prototype.execute = function execute(options) {
+  options || (options = {});
+  return uglify.uglify.gen_code(
+    this.translate(this.computeScope(this.ast, options), options),
+    options
+  );
+};
