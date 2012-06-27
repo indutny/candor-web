@@ -9,6 +9,7 @@
     </style>
     <link href="css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="css/font-awesome.css" rel="stylesheet">
+    <link href="css/highlight.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <link href="img/favicon.ico" rel="shortcut icon">
 
@@ -61,7 +62,176 @@
         <h2>Instructions</h2>
       </div>
       <div class="modal-body">
-        Lorem ipsum
+        <h1>Candor</h1>
+        <p>Candor is a language inspired by javascript, but with less features and,
+        therefore, less complexity. So no semicolons, no exceptions and simplified
+        anonymous function syntax (dart-like).
+
+        </p>
+        <p>Main goal of Candor is to provide a powerful and developer-friendly language
+        that can be easily optimized by compiler.
+
+        </p>
+        <h2>Language basics</h2>
+        <p>Candor is essentially inspired by the <a href="http://www.ecmascript.org/">ECMA-script</a>,
+        but has much less features and complexity (for compiler).
+
+        </p>
+        <p>Functions are declared in <a href="http://www.dartlang.org/">dart</a>-like style, variables
+        are implicitly scoped (i.e. if variable has no use in outer scopes, it&#39;ll be
+        allocated in one where you declared it).
+        </p>
+
+        <pre><code><span class="comment">// Keywords: nil, true, false, typeof</span>
+<span class="comment">// sizeof, keysof, if, else, while,</span>
+<span class="comment">// for, break, continue, return, new</span>
+
+<span class="comment">// Primitives</span>
+<span class="constant">nil</span>
+<span class="constant">true</span>
+<span class="constant">false</span>
+NaN<span class="number">
+1</span>
+<span class="string">'abc'</span>
+<span class="string">"abc"</span>
+<span class="number">[1</span>,<span class="number"> 2</span>,<span class="number"> 3</span>]
+{ a:<span class="number"> 1</span>, <span class="string">'b'</span>:<span class="number"> 2</span>, <span class="string">"c"</span>:<span class="number"> 3</span> }
+
+<span class="comment">// Variables and objects</span>
+a =<span class="number"> 1</span>
+a.b = <span class="string">"abc"</span>
+a.b.c = a
+a[b()][c] = x
+
+delete a[b] <span class="comment">// removes key and value from object</span>
+
+<span class="comment">// While object literals are restricted to</span>
+<span class="comment">// declaring strings as keys, any value</span>
+<span class="comment">// can be used as a key. This allows for all</span>
+<span class="comment">// kinds of interesting data structures like</span>
+<span class="comment">// efficient sets and unique unguessable keys.</span>
+a = { <span class="string">"5"</span>: <span class="string">"five"</span> }
+a<span class="number">[5</span>] =<span class="number"> 5</span>
+a[<span class="string">"5"</span>]         <span class="comment">// -> "five"</span>
+a<span class="number">[5</span>]           <span class="comment">// -> 5</span>
+a[{ hello: <span class="string">"World"</span> }] = <span class="string">"key is object, value is string!"</span>
+
+<span class="comment">// Functions</span>
+a() {
+<span class="keyword">return</span><span class="number"> 1</span>
+}
+a()
+<span class="comment">// Functions are also objects and can have properties</span>
+a.b = <span class="string">"foo"</span>
+
+<span class="comment">// Arrays are also objects, except they</span>
+<span class="comment">// internally keep track of the largest</span>
+<span class="comment">// integer index so that sizeof works with them.</span>
+a = <span class="number">[1</span><span class="number">,2</span><span class="number">,3</span>]
+a.foo = <span class="constant">true</span>
+sizeof a       <span class="comment">// -> 3</span>
+a.foo          <span class="comment">// -> true</span>
+
+<span class="comment">// typeof.  Sometimes it's useful to know what type a variable is</span>
+
+typeof <span class="constant">nil</span>     <span class="comment">// -> "nil"</span>
+typeof <span class="constant">true</span>    <span class="comment">// -> "boolean"</span>
+typeof <span class="constant">false</span>   <span class="comment">// -> "boolean"</span>
+typeof<span class="number"> 42</span>      <span class="comment">// -> "number"</span>
+typeof <span class="string">"Hello"</span> <span class="comment">// -> "string"</span>
+typeof <span class="number">[1</span><span class="number">,2</span><span class="number">,3</span>] <span class="comment">// -> "array"</span>
+typeof {a:<span class="number"> 5</span>}  <span class="comment">// -> "object"</span>
+typeof (){}    <span class="comment">// -> "function"</span>
+
+<span class="comment">// sizeof gives the size of an array (max integer key + 1)</span>
+<span class="comment">// or string (number of bytes)</span>
+<span class="comment">// gives nil for other types</span>
+
+sizeof <span class="string">"Hello"</span> <span class="comment">// -> 5</span>
+sizeof <span class="number">[1</span><span class="number">,2</span><span class="number">,3</span>] <span class="comment">// -> 3</span>
+sizeof {}      <span class="comment">// -> 0</span>
+
+<span class="comment">// keysof returns an array of all the keys in an object</span>
+keys = keysof { name: <span class="string">"Tim"</span>, age:<span class="number"> 29</span> }
+keys           <span class="comment">// -> ["name", "age"]</span>
+
+<span class="comment">// Control flow</span>
+
+<span class="comment">// The variables in the condition head are scoped with the condition,</span>
+<span class="comment">// not the optional body block.</span>
+
+<span class="comment">// Conditionals</span>
+person = { age:<span class="number"> 29</span>, name: <span class="string">"Tim"</span> }
+
+<span class="comment">// With block</span>
+<span class="keyword">if</span> (person.age ><span class="number"> 18</span>) {
+person.name  <span class="comment">// -> "Tim"</span>
+}
+
+<span class="comment">// Without block</span>
+<span class="keyword">if</span> (person.age ><span class="number"> 18</span>) person.name
+
+<span class="comment">// using else</span>
+<span class="keyword">if</span> (person.age ><span class="number"> 18</span>) {
+<span class="comment">// do something with `person`</span>
+} <span class="keyword">else</span> {
+<span class="comment">// do something else</span>
+}
+
+<span class="keyword">if</span> (person.age ><span class="number"> 18</span>) action(person)
+<span class="keyword">else</span> otherAction()
+
+<span class="comment">// While loops</span>
+i =<span class="number"> 0</span>
+sum =<span class="number"> 0</span>
+while (i &lt;<span class="number"> 10</span>) {
+sum = sum + i
+i++
+}
+
+<span class="comment">// break and continue. `while` loop can have</span>
+<span class="comment">// `break` and `continue`</span>
+<span class="comment">// break exits a loop immediately, continue,</span>
+<span class="comment">// skips to the next iteration</span>
+
+<span class="comment">// Object Oriented Programming</span>
+
+<span class="comment">// There are no dynamic prototypes in candor,</span>
+<span class="comment">// but there is a fast-clone</span>
+<span class="comment">// operation and special method calling syntax</span>
+<span class="comment">// to make OOP style programming</span>
+<span class="comment">// possible if you prefer that style.</span>
+
+<span class="comment">// Create a prototype object</span>
+Rectangle = {
+getArea: (self) {
+<span class="keyword">return</span> self.w * self.h
+},
+initialize: (self, w, h) {
+self.w = w
+self.h = h
+}
+}
+
+<span class="comment">// First create a fast shallow clone of</span>
+<span class="comment">// the Rectangle prototype</span>
+rect = clone Rectangle
+
+<span class="comment">// Then initialize it using a one of the functions</span>
+rect.initialize(rect,<span class="number"> 3</span>,<span class="number"> 5</span>)
+
+<span class="comment">// Now we can use this object</span>
+rect.getArea(rect) <span class="comment">// -> 15</span>
+
+<span class="comment">// To make calling methods easier, there is</span>
+<span class="comment">// special syntax sugar using `:`</span>
+<span class="comment">// instead of `.` for function calls</span>
+<span class="comment">// It means to call the function with</span>
+<span class="comment">// whatever is left of the `:` as the first argument.</span>
+
+<span class="comment">// The previous two calls can be written as:</span>
+rect:initialize<span class="number">(3</span>,<span class="number"> 5</span>)
+rect:getArea() <span class="comment">// -> 15</span></code></pre>
       </div>
     </div>
 
