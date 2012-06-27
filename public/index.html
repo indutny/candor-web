@@ -165,7 +165,7 @@ person = { age:<span class="number"> 29</span>, name: <span class="string">"Tim"
 
 <span class="comment">// With block</span>
 <span class="keyword">if</span> (person.age ><span class="number"> 18</span>) {
-person.name  <span class="comment">// -> "Tim"</span>
+  person.name  <span class="comment">// -> "Tim"</span>
 }
 
 <span class="comment">// Without block</span>
@@ -173,9 +173,9 @@ person.name  <span class="comment">// -> "Tim"</span>
 
 <span class="comment">// using else</span>
 <span class="keyword">if</span> (person.age ><span class="number"> 18</span>) {
-<span class="comment">// do something with `person`</span>
+  <span class="comment">// do something with `person`</span>
 } <span class="keyword">else</span> {
-<span class="comment">// do something else</span>
+  <span class="comment">// do something else</span>
 }
 
 <span class="keyword">if</span> (person.age ><span class="number"> 18</span>) action(person)
@@ -185,8 +185,8 @@ person.name  <span class="comment">// -> "Tim"</span>
 i =<span class="number"> 0</span>
 sum =<span class="number"> 0</span>
 while (i &lt;<span class="number"> 10</span>) {
-sum = sum + i
-i++
+  sum = sum + i
+  i++
 }
 
 <span class="comment">// break and continue. `while` loop can have</span>
@@ -204,13 +204,13 @@ i++
 
 <span class="comment">// Create a prototype object</span>
 Rectangle = {
-getArea: (self) {
-<span class="keyword">return</span> self.w * self.h
-},
-initialize: (self, w, h) {
-self.w = w
-self.h = h
-}
+  getArea: (self) {
+    <span class="keyword">return</span> self.w * self.h
+  },
+  initialize: (self, w, h) {
+    self.w = w
+    self.h = h
+  }
 }
 
 <span class="comment">// First create a fast shallow clone of</span>
