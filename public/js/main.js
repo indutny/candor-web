@@ -43,7 +43,7 @@
         // TODO: Handle errors
       }).always(function() {
         button.button('reset');
-        button.focus();
+        editor.focus();
       });
     });
   });
