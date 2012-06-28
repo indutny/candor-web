@@ -90,8 +90,6 @@
           editor.moveCursorTo(err.line - 1, err.offset - 1);
 
           showAlert(err.text);
-
-          activeError = msg;
         }
       }).always(function() {
         button.button('reset');
