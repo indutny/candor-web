@@ -3,7 +3,7 @@
   $('#editor').html('print = global.print\n' +
                     'while (i < 10) {\n' +
                     '  print(i)\n' +
-                    '    i++\n' +
+                    '  i++\n' +
                     '}\n' +
                     'print(\'I\\\'m done!\')');
 
