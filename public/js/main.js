@@ -1,16 +1,19 @@
 !function() {
-  // Set default source
-  $('#editor').html('print = global.print\n' +
-                    'while (i < 10) {\n' +
-                    '  print(i)\n' +
-                    '  i++\n' +
-                    '}\n' +
-                    'print(\'I\\\'m done!\')');
-
-  var editor = ace.edit('editor'),
+  // Default source
+  var demoCode = 'print = global.print\n' +
+                 'while (i < 10) {\n' +
+                 '  print(i)\n' +
+                 '  i++\n' +
+                 '}\n' +
+                 'print(\'I\\\'m done!\')',
+      editor = ace.edit('editor'),
       button = $('#run-btn'),
       out = $('#console'),
       errorAlert = $('.error-alert');
+
+  editor.env.document.setValue(demoCode);
+  editor.env.document.setMode('ace/mode/candor');
+  editor.env.document.setTabSize(2);
 
   // Focus editor by-default
   editor.focus();
