@@ -24,11 +24,22 @@ app.router.post('/api/raw', function() {
       })
     });
   } catch (e) {
-    this.res.json(500, {
-      error: true,
-      message: e.message,
-      stack: e.stack
-    });
+    if (e.type === 'ParserError') {
+      this.res.json(400, {
+        error: true,
+        type: 'ParserError',
+        text: e.text,
+        line: e.line,
+        offset: e.offset
+      });
+    } else {
+      this.res.json(500, {
+        error: true,
+        type: 'Exception',
+        message: e.message,
+        stack: e.stack
+      });
+    }
   }
 });
 

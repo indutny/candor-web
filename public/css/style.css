@@ -28,8 +28,8 @@ header #logo {
   margin-top: -1px;
   background: white;
   border: 1px solid #ddd;
-  padding: 60px 20px 10px;
-  height: 360px;
+  padding: 10px 20px;
+  height: 385px;
 }
 
 #body #editor {
@@ -37,16 +37,26 @@ header #logo {
   height: 310px;
 }
 
+#body .content-header {
+  margin: 15px 0 15px 0;
+}
+
 #body #run-btn {
   height: 29px;
   font-size: 24px;
   line-height: 26px;
   float: right;
-  margin-bottom: 4px;
+  margin-left: 16px;
 }
 
 #body #run-btn i {
   line-height: 26px;
+}
+
+#body .error-alert {
+  float: right;
+  width: 460px;
+  margin: 2px 0 0 0;
 }
 
 #body #console {
@@ -77,7 +87,4 @@ header #logo {
 
 #body #console .console-string {
   color: #d14;
-}
-
-#help-window pre {
 }

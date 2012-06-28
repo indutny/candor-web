@@ -1,10 +1,36 @@
 !function() {
+  // Set default source
+  $('#editor').html('print = global.print\n' +
+                    'while (i < 10) {\n' +
+                    '  print(i)\n' +
+                    '    i++\n' +
+                    '}\n' +
+                    'print(\'I\\\'m done!\')');
+
   var editor = ace.edit('editor'),
       button = $('#run-btn'),
-      out = $('#console');
+      out = $('#console'),
+      errorAlert = $('.error-alert');
 
   // Focus editor by-default
-  $('#editor').focus();
+  editor.focus();
+
+  // Init error message
+  errorAlert.alert();
+
+  function showAlert(text) {
+    if (showAlert.last) {
+      showAlert.last.remove();
+      showAlert.last = null;
+    }
+
+    if (text) {
+      var err = errorAlert.clone().insertAfter(errorAlert);
+      err.find('.text').text(text);
+      err.fadeIn();
+      showAlert.last = err;
+    }
+  }
 
   // Candor's runtime loader
   function getRuntime(callback) {
@@ -32,6 +58,10 @@
   button.button().on('click', function(e) {
     e.preventDefault();
     button.button('loading');
+    editor.setReadOnly(true);
+
+    // Remove any error messages
+    showAlert();
 
     getRuntime(function(runtime) {
       $.ajax({
@@ -45,10 +75,27 @@
         setTimeout(function() {
           run(runtime, data.output);
         }, 0);
-      }).fail(function() {
+      }).fail(function(xhr) {
         // TODO: Handle errors
+        try {
+          var err = JSON.parse(xhr.responseText);
+        } catch (e) {
+          return;
+        }
+
+        if (err.type === 'Exception') {
+          showAlert(err.message);
+        } else if (err.type === 'ParserError') {
+          // Highlight line in the source and show error message
+          editor.moveCursorTo(err.line - 1, err.offset - 1);
+
+          showAlert(err.text);
+
+          activeError = msg;
+        }
       }).always(function() {
         button.button('reset');
+        editor.setReadOnly(false);
         editor.focus();
       });
     });
@@ -100,7 +147,8 @@
         var type = global.runtime.$typeof(value);
         if (type === 'nil') {
           return [{ type: 'keyword', value: 'nil' }];
-        } else if (depth >= 3 && (type === 'object' || type === 'array')) {
+        } else if (depth >= 3 && (type === 'object' || type === 'array') ||
+                   type === 'function') {
           return [{ type: 'keyword', value: '[' + type + ']' }];
         } else if (type === 'object') {
           return [{
