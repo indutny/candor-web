@@ -1,6 +1,6 @@
 {
   "name": "candor-web",
-  "version": "0.0.1-16",
+  "version": "0.0.1-17",
   "private": true,
   "domain": "candor-lang.org",
   "dependencies": {
