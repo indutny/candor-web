@@ -204,7 +204,9 @@
       runtime + '\n' +
       // Expose runtime to global utilities
       'global.runtime = $$runtime\n' +
-      code +
+      'return (function() {\n' +
+      code + '\n' +
+      '})();\n' +
       '\n}).call(global)'
     );
 
